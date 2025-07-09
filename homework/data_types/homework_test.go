@@ -9,10 +9,10 @@ import (
 // go test -v homework_test.go
 
 func ToLittleEndian(number uint32) uint32 {
-	return (number>>0)&0xFF<<24 |
-		(number>>8)&0xFF<<16 |
-		(number>>16)&0xFF<<8 |
-		(number>>24)&0xFF<<0
+	return number&0xFF<<24 |
+		number&0xFF00<<8 |
+		number&0xFF0000>>8 |
+		number&0xFF000000>>24
 }
 
 func TestСonversion(t *testing.T) {
