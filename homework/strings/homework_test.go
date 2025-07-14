@@ -36,7 +36,7 @@ func (b *COWBuffer) Clone() COWBuffer {
 func (b *COWBuffer) Close() {
 	b.rwmu.Lock()
 	defer b.rwmu.Unlock()
-	
+
 	if *b.refs > 1 {
 		*b.refs--
 	} else {
@@ -63,12 +63,14 @@ func (b *COWBuffer) Update(index int, value byte) bool {
 	}
 
 	b.data[index] = value
+
 	return true
 }
 
 func (b *COWBuffer) String() string {
 	b.rwmu.RLock()
 	defer b.rwmu.RUnlock()
+
 	return *(*string)(unsafe.Pointer(&b.data))
 }
 
