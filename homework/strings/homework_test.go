@@ -2,7 +2,6 @@ package main
 
 import (
 	"reflect"
-	"sync"
 	"testing"
 	"unsafe"
 
@@ -12,54 +11,36 @@ import (
 type COWBuffer struct {
 	data []byte
 	refs *int
-	rwmu *sync.RWMutex
 }
 
 func NewCOWBuffer(data []byte) COWBuffer {
-	refs := 1
-	return COWBuffer{data: data, refs: &refs, rwmu: &sync.RWMutex{}}
+	return COWBuffer{data: data, refs: new(int)}
 }
 
 func (b *COWBuffer) Clone() COWBuffer {
-	b.rwmu.Lock()
-	defer b.rwmu.Unlock()
-
 	*b.refs++
 
 	return COWBuffer{
 		data: b.data,
 		refs: b.refs,
-		rwmu: b.rwmu,
 	}
 }
 
 func (b *COWBuffer) Close() {
-	b.rwmu.Lock()
-	defer b.rwmu.Unlock()
-
 	if *b.refs > 1 {
 		*b.refs--
-	} else {
-		b.data = nil
-		b.refs = nil
 	}
 }
 
 func (b *COWBuffer) Update(index int, value byte) bool {
-	b.rwmu.Lock()
-	defer b.rwmu.Unlock()
-
 	if index < 0 || index >= len(b.data) {
 		return false
 	}
 
 	if *b.refs > 1 {
-		newData := make([]byte, len(b.data))
-		copy(newData, b.data)
-		*b.refs--
-		b.data = newData
-		b.refs = new(int)
-		*b.refs = 1
+		newBuf := NewCOWBuffer(make([]byte, len(b.data)))
+		copy(newBuf.data, b.data)
+		*b = newBuf
 	}
 
 	b.data[index] = value
@@ -68,9 +49,6 @@ func (b *COWBuffer) Update(index int, value byte) bool {
 }
 
 func (b *COWBuffer) String() string {
-	b.rwmu.RLock()
-	defer b.rwmu.RUnlock()
-
 	return *(*string)(unsafe.Pointer(&b.data))
 }
 
