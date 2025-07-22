@@ -9,32 +9,120 @@ import (
 
 // go test -v homework_test.go
 
+type Entry struct {
+	key         int
+	value       int
+	left, right *Entry
+}
+
 type OrderedMap struct {
-	// need to implement
+	Root *Entry
+	size int
 }
 
 func NewOrderedMap() OrderedMap {
-	return OrderedMap{} // need to implement
+	return OrderedMap{}
 }
 
 func (m *OrderedMap) Insert(key, value int) {
-	// need to implement
+	current := &m.Root
+
+	for {
+		if *current == nil {
+			*current = &Entry{key: key, value: value}
+			m.size++
+			return
+		}
+
+		if (**current).key == key {
+			return
+		}
+
+		if key > (**current).key {
+			current = &(*current).right
+		} else {
+			current = &(*current).left
+		}
+	}
 }
 
 func (m *OrderedMap) Erase(key int) {
-	// need to implement
+	m.Root = m.eraseHandler(m.Root, key)
+}
+
+func (m *OrderedMap) eraseHandler(entry *Entry, key int) *Entry {
+	if entry == nil {
+		return nil
+	}
+
+	if key < entry.key {
+		entry.left = m.eraseHandler(entry.left, key)
+	} else if key > entry.key {
+		entry.right = m.eraseHandler(entry.right, key)
+	} else {
+		m.size--
+
+		if entry.left == nil && entry.right == nil {
+			return nil
+		}
+
+		if entry.left == nil {
+			return entry.right
+		}
+		if entry.right == nil {
+			return entry.left
+		}
+
+		predecessor := entry.left
+		for predecessor.right != nil {
+			predecessor = predecessor.right
+		}
+		entry.key = predecessor.key
+		entry.value = predecessor.value
+		entry.left = m.eraseHandler(entry.left, predecessor.key)
+
+		return entry
+	}
+
+	return entry
 }
 
 func (m *OrderedMap) Contains(key int) bool {
-	return false // need to implement
+	current := m.Root
+
+	for {
+		if current == nil {
+			return false
+		}
+
+		if current.key == key {
+			return true
+		}
+
+		if key > current.key {
+			current = current.right
+		} else {
+			current = current.left
+		}
+	}
 }
 
 func (m *OrderedMap) Size() int {
-	return 0 // need to implement
+	return m.size
 }
 
 func (m *OrderedMap) ForEach(action func(int, int)) {
-	// need to implement
+	m.forEachHandler(m.Root, action)
+}
+
+func (m *OrderedMap) forEachHandler(node *Entry, action func(int, int)) {
+	if node == nil {
+		return
+	}
+
+	m.forEachHandler(node.left, action)
+	action(node.key, node.value)
+	m.forEachHandler(node.right, action)
 }
 
 func TestCircularQueue(t *testing.T) {
